@@ -110,7 +110,10 @@ if( __name__ == '__main__'):
     # Write the generated LaTeX code to a .tex file
     with open(output_tex_file_path, 'w') as output_file:
         output_file.write(f"""
+% !TeX encoding = UTF-8
 \\documentclass{{article}}
+\\usepackage[utf8]{{inputenc}}
+\\usepackage[T1]{{fontenc}}
 \\usepackage{{geometry}}  % Adjust the margin as needed
 \\usepackage{{graphicx}}
 \\usepackage{{underscore}}  % Add this line to use \textunderscore
