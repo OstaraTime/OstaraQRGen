@@ -39,6 +39,7 @@ def generate_qr_code(jwt_token, identifier):
 def generate_card(name, department, identifier):
     # Replace underscores with _ in name and department
     name = name.replace("_", "_")
+#    name = name.replace(" ", "\\-")
     department = department.replace("_", "_")
 
     # Generate JWT token
@@ -49,8 +50,10 @@ def generate_card(name, department, identifier):
 
     r = f"""
 \\begin{{minipage}}{{0.20\\textwidth}}  % Adjust the width as needed
-    \\textbf{{{name}}} \\\\
-    {department}
+    \\begin{{flushleft}}
+        \\textbf{{{name}}} \\\\
+        {department}
+    \\end{{flushleft}}
 \\end{{minipage}}%
 \\hspace{{0.05\\textwidth}}%
 \\begin{{minipage}}{{0.25\\textwidth}}
