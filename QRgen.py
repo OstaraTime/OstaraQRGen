@@ -21,7 +21,7 @@ def generate_jwt_token(issuer, token, secret_key):
     return token
 
 # Function to generate QR code from JWT token
-def generate_qr_code(jwt_token, identifier):
+def generate_qr_code(jwt_token, identifier, tmpdir):
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -31,12 +31,12 @@ def generate_qr_code(jwt_token, identifier):
     qr.add_data(jwt_token)
     qr.make(fit=True)
     img = qr.make_image(fill_color="black", back_color="white")
-    filename = f"img/qr_code_{identifier}.png"  # Include identifier in the filename
+    filename = f"{tmpdir}/img/qr_code_{identifier}.png"  # Include identifier in the filename
     img.save(filename)  # Save the QR code image
     return filename  # Return the filename
 
 # Function to generate LaTeX code for a card
-def generate_card(row, jwt_mode):
+def generate_card(row, jwt_mode, tmpdir):
 
     # Generate JWT token
     if jwt_mode:
@@ -53,7 +53,7 @@ def generate_card(row, jwt_mode):
     department = department.replace("_", "_")
 
     # Generate QR code and get filename
-    qr_code_filename = generate_qr_code(jwt_token, identifier)
+    qr_code_filename = generate_qr_code(jwt_token, identifier, tmpdir)
 
     r = f"""
 \\begin{{minipage}}{{0.20\\textwidth}}  % Adjust the width as needed
@@ -72,13 +72,13 @@ def generate_card(row, jwt_mode):
     return r
 
 
-def generate_cards(csv_file_path, output_tex_file_path, jwt_mode):
+def generate_cards(csv_file_path, output_tex_file_path, jwt_mode, tmpdir):
     global counter
     counter = 0
 
     # Create tmp folder if not there yet
-    if not os.path.exists("img"):
-        os.mkdir("img")
+    if not os.path.exists(f"{tmpdir}/img"):
+        os.mkdir(f"{tmpdir}/img")
 
     # Read CSV file and generate LaTeX code
     latex_code = ""
@@ -88,7 +88,7 @@ def generate_cards(csv_file_path, output_tex_file_path, jwt_mode):
         for row in csv_reader:
 #            id, name, department, identifier = row
 #            latex_code += generate_card(name, department, identifier)
-            latex_code += generate_card(row, jwt_mode)
+            latex_code += generate_card(row, jwt_mode, tmpdir)
             counter+=1
 
     # Write the generated LaTeX code to a .tex file
@@ -123,10 +123,10 @@ if( __name__ == '__main__'):
     jwt_secret = '12345678'
     jwt_mode = False	# If True, take JWT from CSV instead of generating it
 
-    opts, args = getopt.getopt(sys.argv[1:],"hc:t:i:s:",["csvfile=","texfile=","issuer=","secret="])
+    opts, args = getopt.getopt(sys.argv[1:],"hc:t:i:s:j",["csvfile=","texfile=","issuer=","secret="])
     for opt, arg in opts:
         if opt == '-h':
-            print ('QRgen.py -c <input_file.csv> -t <output_file.tex> -i <issuer_name> -s <issuer_secret>')
+            print ('QRgen.py -c <input_file.csv> -t <output_file.tex> -i <issuer_name> -s <issuer_secret> [-j]')
             sys.exit()
         elif opt in ("-c", "--csvfile"):
             csv_file_path = arg
@@ -140,5 +140,5 @@ if( __name__ == '__main__'):
             jwt_mode = True
 
 
-    generate_cards(csv_file_path, output_tex_file_path, jwt_mode)
+    generate_cards(csv_file_path, output_tex_file_path, jwt_mode, ".")
 
