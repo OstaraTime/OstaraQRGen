@@ -5,7 +5,7 @@ import sys
 import getopt
 import os
 
-#counter = 0
+global counter
 
 # Function to generate JWT token
 def generate_jwt_token(issuer, token, secret_key):
@@ -36,14 +36,21 @@ def generate_qr_code(jwt_token, identifier):
     return filename  # Return the filename
 
 # Function to generate LaTeX code for a card
-def generate_card(name, department, identifier):
+def generate_card(row, jwt_mode):
+
+    # Generate JWT token
+    if jwt_mode:
+        id, name, department, jwt_token = row
+        identifier = id
+    else:
+        id, name, department, identifier = row
+        jwt_token = generate_jwt_token(issuer=jwt_issuer, token=identifier, secret_key=jwt_secret)
+
+
     # Replace underscores with _ in name and department
     name = name.replace("_", "_")
 #    name = name.replace(" ", "\\-")
     department = department.replace("_", "_")
-
-    # Generate JWT token
-    jwt_token = generate_jwt_token(issuer=jwt_issuer, token=identifier, secret_key=jwt_secret)
 
     # Generate QR code and get filename
     qr_code_filename = generate_qr_code(jwt_token, identifier)
@@ -65,36 +72,9 @@ def generate_card(name, department, identifier):
     return r
 
 
-if( __name__ == '__main__'):
-
-    # Defaults
-    csv_file_path = 'person.csv'
-    output_tex_file_path = 'output.tex'
-    jwt_issuer = 'Ostara'
-    jwt_secret = '12345678'
-
-    opts, args = getopt.getopt(sys.argv[1:],"hc:t:i:s:",["csvfile=","texfile=","issuer=","secret="])
-    for opt, arg in opts:
-        if opt == '-h':
-            print ('QRgen.py -c <input_file.csv> -t <output_file.tex> -i <issuer_name> -s <issuer_secret>')
-            sys.exit()
-        elif opt in ("-c", "--csvfile"):
-            csv_file_path = arg
-        elif opt in ("-t", "--texfile"):
-            output_tex_file_path = arg
-        elif opt in ("-i", "--issuer"):
-            jwt_issuer = arg
-        elif opt in ("-s", "--secret"):
-            jwt_secret = arg
-
-    # For debigging only
-    if(False):
-        print ('Input file is ', csv_file_path)
-        print ('Output file is ', output_tex_file_path)
-        print ('JWT Issuer is ', jwt_issuer)
-        print ('JWT Secret is', jwt_secret)
-
-    counter=0
+def generate_cards(csv_file_path, output_tex_file_path, jwt_mode):
+    global counter
+    counter = 0
 
     # Create tmp folder if not there yet
     if not os.path.exists("img"):
@@ -106,8 +86,9 @@ if( __name__ == '__main__'):
         csv_reader = csv.reader(file)
         # header = next(csv_reader)  # Skip the header row
         for row in csv_reader:
-            id, name, department, identifier = row
-            latex_code += generate_card(name, department, identifier)
+#            id, name, department, identifier = row
+#            latex_code += generate_card(name, department, identifier)
+            latex_code += generate_card(row, jwt_mode)
             counter+=1
 
     # Write the generated LaTeX code to a .tex file
@@ -130,3 +111,34 @@ if( __name__ == '__main__'):
 \\end{{document}}
 """)
     print(f"LaTeX code has been generated and saved to {output_tex_file_path}.")
+
+
+
+if( __name__ == '__main__'):
+
+    # Defaults
+    csv_file_path = 'person.csv'
+    output_tex_file_path = 'output.tex'
+    jwt_issuer = 'Ostara'
+    jwt_secret = '12345678'
+    jwt_mode = False	# If True, take JWT from CSV instead of generating it
+
+    opts, args = getopt.getopt(sys.argv[1:],"hc:t:i:s:",["csvfile=","texfile=","issuer=","secret="])
+    for opt, arg in opts:
+        if opt == '-h':
+            print ('QRgen.py -c <input_file.csv> -t <output_file.tex> -i <issuer_name> -s <issuer_secret>')
+            sys.exit()
+        elif opt in ("-c", "--csvfile"):
+            csv_file_path = arg
+        elif opt in ("-t", "--texfile"):
+            output_tex_file_path = arg
+        elif opt in ("-i", "--issuer"):
+            jwt_issuer = arg
+        elif opt in ("-s", "--secret"):
+            jwt_secret = arg
+        elif opt in ("-j", "--jwt"):
+            jwt_mode = True
+
+
+    generate_cards(csv_file_path, output_tex_file_path, jwt_mode)
+
